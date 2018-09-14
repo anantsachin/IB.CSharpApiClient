@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/mathpaquette/IB.CSharpApiClient</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>IB.CSharpApiClient version 1.0.1</releaseNotes>
+    <releaseNotes>IB.CSharpApiClient version 2.0.0</releaseNotes>
     <copyright>$copyright$</copyright>
     <tags>Interactive Brokers TWS API (Client)</tags>
   </metadata>
