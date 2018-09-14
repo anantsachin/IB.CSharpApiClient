@@ -1,7 +1,4 @@
-﻿using IB.CSharpApiClient.Example.Domain;
-using IB.CSharpApiClient.Example.Infrastructure;
-
-namespace IB.CSharpApiClient.Example
+﻿namespace IB.CSharpApiClient.Example
 {
     public class Program
     {
@@ -15,8 +12,8 @@ namespace IB.CSharpApiClient.Example
             var port = 7497;
             var clientId = 10;
 
-            var example = new DomainClassExample(new RealTimeDataProviderExample());
-            example.RequestDataExample(host, port, clientId);
+            var apiClient = ApiClientFactory.CreateNew();
+            apiClient.Connect(host, port, clientId);
 
             System.Console.ReadLine();
         }

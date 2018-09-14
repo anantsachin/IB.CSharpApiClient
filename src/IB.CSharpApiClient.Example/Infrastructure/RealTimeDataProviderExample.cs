@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using IB.CSharpApiClient.Events;
 using IB.CSharpApiClient.Example.Domain;
 using IB.CSharpApiClient.Example.Domain.ValueObject;
 using IB.CSharpApiClient.Extensions;
+using IB.CSharpApiClient.Messages;
 using IBApi;
 
 namespace IB.CSharpApiClient.Example.Infrastructure
@@ -16,12 +16,14 @@ namespace IB.CSharpApiClient.Example.Infrastructure
         private readonly Dictionary<string, int> _requestIdsBySymbol;
         private readonly Dictionary<int, Level1MarketDataEventArgs> _lastsByRequestId;
 
-        public RealTimeDataProviderExample()
+        public RealTimeDataProviderExample(IApiClientMessageDispatcher apiClientMessageDispatcher,
+            EReaderSignal readerMonitorSignal,
+            EClientSocket clientSocket): base(apiClientMessageDispatcher, readerMonitorSignal, clientSocket, ApiClientDefault.DefaultTimeoutMs)
         {
             _requestIdsBySymbol = new Dictionary<string, int>();
             _lastsByRequestId = new Dictionary<int, Level1MarketDataEventArgs>();
-            EventDispatcher.TickPrice += EventDispatcherOnTickPrice;
-            EventDispatcher.TickSize += EventDispatcherOnTickSize;
+            TickPrice += EventDispatcherOnTickPrice;
+            TickSize += EventDispatcherOnTickSize;
         }
 
         public Task<Scanner[]> GetScannerAsync(ScannerSubscription scannerSubscription, List<TagValue> scannerSubscriptionOptions = null)
@@ -34,27 +36,29 @@ namespace IB.CSharpApiClient.Example.Infrastructure
             scannerSubscriptionOptions = scannerSubscriptionOptions ?? new List<TagValue>();
             var scanners = new List<Scanner>();
 
-            EventHandler<ScannerEventArgs> scanner = (sender, args) =>
+            void ScannerHandler(ScannerMessage scannerMessage)
             {
-                if (args.RequestId != reqId) return;
-                scanners.Add(new Scanner(args.Rank, args.ContractDetails, args.Distance, args.Benchmark, args.Projection, args.LegsStr));
-            };
+                if (scannerMessage.RequestId != reqId) return;
+                scanners.Add(new Scanner(scannerMessage.Rank, scannerMessage.ContractDetails, scannerMessage.Distance, scannerMessage.Benchmark, scannerMessage.Projection, scannerMessage.LegsStr));
+            }
 
-            EventHandler<ScannerEndEventArgs> scannerEnd = (sender, args) =>
+            void ScannerEndHandler(ScannerEndMessage scannerEndMessage)
             {
-                if (args.RequestId != reqId) return;
+                if (scannerEndMessage.RequestId != reqId) return;
                 res.SetResult(scanners.ToArray());
-            };
-            EventDispatcher.Scanner += scanner;
-            EventDispatcher.ScannerEnd += scannerEnd;
+            }
+
+            Scanner += ScannerHandler;
+            ScannerEnd += ScannerEndHandler;
             
             ClientSocket.reqScannerSubscription(reqId, scannerSubscription, scannerSubscriptionOptions);
 
             res.Task.ContinueWith(x =>
             {
                 ClientSocket.cancelScannerSubscription(reqId);
-                EventDispatcher.Scanner -= scanner;
-                EventDispatcher.ScannerEnd -= scannerEnd;
+                Scanner -= ScannerHandler;
+                ScannerEnd -= ScannerEndHandler;
+                ct.Dispose();
 
             }, TaskContinuationOptions.None);
 
@@ -92,27 +96,27 @@ namespace IB.CSharpApiClient.Example.Infrastructure
             }
         }
 
-        private void EventDispatcherOnTickPrice(object o, TickPriceEventArgs tickPriceEventArgs)
+        private void EventDispatcherOnTickPrice(TickPriceMessage tickPriceMessage)
         {
-            if (!_lastsByRequestId.TryGetValue(tickPriceEventArgs.RequestId, out var last))
+            if (!_lastsByRequestId.TryGetValue(tickPriceMessage.RequestId, out var last))
             {
                 last = new Level1MarketDataEventArgs();
-                _lastsByRequestId.Add(tickPriceEventArgs.RequestId, last);
+                _lastsByRequestId.Add(tickPriceMessage.RequestId, last);
             }
 
-            last.UpdateValues(tickPriceEventArgs.Field, tickPriceEventArgs.Price);
+            last.UpdateValues(tickPriceMessage.Field, tickPriceMessage.Price);
             MarketData.RaiseEvent(this, last.ShallowCopy());
         }
 
-        private void EventDispatcherOnTickSize(object o, TickSizeEventArgs tickSizeEventArgs)
+        private void EventDispatcherOnTickSize(TickSizeMessage tickSizeMessage)
         {
-            if (!_lastsByRequestId.TryGetValue(tickSizeEventArgs.RequestId, out var last))
+            if (!_lastsByRequestId.TryGetValue(tickSizeMessage.RequestId, out var last))
             {
                 last = new Level1MarketDataEventArgs();
-                _lastsByRequestId.Add(tickSizeEventArgs.RequestId, last);
+                _lastsByRequestId.Add(tickSizeMessage.RequestId, last);
             }
 
-            last.UpdateValues(tickSizeEventArgs.Field, tickSizeEventArgs.Size);
+            last.UpdateValues(tickSizeMessage.Field, tickSizeMessage.Size);
             MarketData.RaiseEvent(this, last.ShallowCopy());
         }
     }

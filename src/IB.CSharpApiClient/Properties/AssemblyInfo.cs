@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("IB.CSharpApiClient")]
 [assembly: AssemblyDescription("IB.CSharpApiClient")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Inovitex Technologies Inc.")]
+[assembly: AssemblyCompany("Mathieu Paquette")]
 [assembly: AssemblyProduct("IB.CSharpApiClient")]
-[assembly: AssemblyCopyright("Copyright © 2018 Inovitex Technologies Inc.")]
+[assembly: AssemblyCopyright("Copyright © 2018 Mathieu Paquette")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -34,4 +34,4 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
-//[assembly: AssemblyInformationalVersion("2.0.0.0")]
+[assembly: AssemblyInformationalVersion("2.0.0.0")]
